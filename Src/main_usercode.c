@@ -5,12 +5,13 @@
 #include "button_handle.h"
 #include "timers.h"
 #include "uart.h"
+#include "LCD_WH1602.h"
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
 extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
-
+static T_LCD_GPIO_Parameters loc_LCD_GPIO_Parameters;
 
 void main_usercode(void)
 {
@@ -29,10 +30,30 @@ void main_usercode(void)
 
   if(loc_time == 1)
   {
+
     button_SetActiveButtons('C',13);
     button_SetActiveButtons('B',6);
     tim_StartTimer(&htim9);
     tim_StartTimer(&htim10);
+    loc_LCD_GPIO_Parameters.D7 = GPIO_PIN_9; // PB9
+    loc_LCD_GPIO_Parameters.D6 = GPIO_PIN_8; // PB8
+    loc_LCD_GPIO_Parameters.D5 = GPIO_PIN_7; // PB7
+    loc_LCD_GPIO_Parameters.D4 = GPIO_PIN_6; // PB6
+    loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
+    loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
+    loc_LCD_GPIO_Parameters.pLine = GPIOB;
+    InitializeLCD(loc_LCD_GPIO_Parameters);
+
+  }
+  else
+  {
+    /*nothing to do*/
+  }
+
+  if(loc_time == 15)
+  {
+    Cursor(1,1);
+    PrintStr("TEST");
   }
   else
   {

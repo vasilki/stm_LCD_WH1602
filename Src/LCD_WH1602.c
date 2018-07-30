@@ -5,6 +5,8 @@
  *      Author: vasilek
  */
 #include "LCD_WH1602.h"
+//#include "stm32f4xx_hal_rcc.h"
+
 //---Переопределяем порты для подключения дисплея, для удобства---//
 /*
 #define     LCM_OUT               GPIOB->ODR
@@ -24,10 +26,12 @@ static uint32_t     LCM_PIN_D6;           // GPIO_Pin_6          // PB6
 static uint32_t     LCM_PIN_D5;           // GPIO_Pin_5          // PB5
 static uint32_t     LCM_PIN_D4;           // GPIO_Pin_4          // PB4
 #define      LCM_PIN_MASK  ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
+#define MT_WH1602_DELAY_uS            (10000000)
 
 #define LCM_OUT (*gl_line)
 
 //---Функция задержки---//
+/*
 void delay(int a)
 {
     int i = 0;
@@ -38,6 +42,19 @@ void delay(int a)
             {i++;}
         f++;
     }
+}
+*/
+void delay(uint32_t par_us)
+{
+  extern uint32_t HAL_RCC_GetSysClockFreq();
+
+  uint32_t i = HAL_RCC_GetSysClockFreq();
+
+  i = (i/MT_WH1602_DELAY_uS)*par_us;
+
+  for (; i != 0; i--);
+
+  return;
 }
 
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
@@ -117,10 +134,10 @@ void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
 }
 
 //---Печать строки---//
-void PrintStr(char *Text)
+void PrintStr(char *par_string)
 {
     char *c;
-    c = Text;
+    c = par_string;
     while ((c != 0) && (*c != 0))
     {
         SendByte(*c, 1);

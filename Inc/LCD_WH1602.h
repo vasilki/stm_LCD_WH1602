@@ -22,5 +22,10 @@ typedef struct
   uint32_t D7;
 }T_LCD_GPIO_Parameters;
 
+void PrintStr(char *par_string);
+void ClearLCDScreen();
+void Cursor(char Row, char Col);
+void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/);
+
 
 #endif /* LCD_WH1602_H_ */
