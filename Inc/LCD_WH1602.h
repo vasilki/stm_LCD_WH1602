@@ -27,5 +27,10 @@ void ClearLCDScreen();
 void Cursor(char Row, char Col);
 void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/);
 
+void CursorOFF();
+
+void SetCursorFreeze();
+
+void SetCursorBlink();
 
 #endif /* LCD_WH1602_H_ */

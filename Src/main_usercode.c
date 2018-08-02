@@ -22,6 +22,7 @@ void main_usercode(void)
   unsigned int loc_time_ms;
   unsigned int loc_time_sec;
   static unsigned int loc_prev_time_ms=0;
+  static unsigned char loc_B_LCD_Print = 0;
 
   tim_UpdatePeriod();
   loc_time = tim_GetPeriod();
@@ -43,17 +44,21 @@ void main_usercode(void)
     loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
     loc_LCD_GPIO_Parameters.pLine = GPIOB;
     InitializeLCD(loc_LCD_GPIO_Parameters);
-
+    ClearLCDScreen();
   }
   else
   {
     /*nothing to do*/
   }
 
-  if(loc_time == 15)
+  if(loc_B_LCD_Print == 0 && loc_time_ms > 490 && loc_time_ms < 520)
   {
-    Cursor(1,1);
+  //  char loc_buff[200];
+    Cursor(0,2);
+    //SetCursorFreeze();
     PrintStr("TEST");
+ //   uart_Printf(&huart1,loc_buff);
+    loc_B_LCD_Print = 1;
   }
   else
   {

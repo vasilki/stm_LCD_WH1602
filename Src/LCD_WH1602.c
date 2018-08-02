@@ -31,11 +31,12 @@ static uint32_t     LCM_PIN_D4;           // GPIO_Pin_4          // PB4
 #define LCM_OUT (*gl_line)
 
 //---Функция задержки---//
-/*
+
 void delay(int a)
 {
     int i = 0;
     int f = 0;
+    a=a*10;
     while(f < a)
     {
         while(i<60)
@@ -43,7 +44,8 @@ void delay(int a)
         f++;
     }
 }
-*/
+
+/*
 void delay(uint32_t par_us)
 {
   extern uint32_t HAL_RCC_GetSysClockFreq();
@@ -56,16 +58,16 @@ void delay(uint32_t par_us)
 
   return;
 }
-
+*/
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
 void PulseLCD()
 {
     LCM_OUT &= ~LCM_PIN_EN;
-    delay(220);
+    delay(120);
     LCM_OUT |= LCM_PIN_EN;
-    delay(220);
+    delay(120);
     LCM_OUT &= (~LCM_PIN_EN);
-    delay(220);
+    delay(120);
 }
 
 //---Отсылка байта в дисплей---//
@@ -101,6 +103,26 @@ void Cursor(char Row, char Col)
    address |= Col;
    SendByte(0x80 | address, 0);
 }
+
+void CursorOFF()
+{
+  SendByte(0b00001100, 0); //Курсор выключен
+  return;
+}
+
+void SetCursorFreeze()
+{
+  SendByte(0b00001110, 0); //Курсор не мигает
+  return;
+}
+
+
+void SetCursorBlink()
+{
+  SendByte(0b00001111, 0); //Курсор мигает
+  return;
+}
+
 
 //---Очистка дисплея---//
 void ClearLCDScreen()
