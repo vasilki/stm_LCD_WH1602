@@ -70,8 +70,8 @@ void main_usercode(void)
   HAL_Delay(300);*/
   if(loc_prev_time_ms != loc_time_ms)
   {
-    sprintf(loc_buff,"ms=%d sec=%d\n\r",loc_time_ms,loc_time_sec);
-    uart_Printf(&huart1,loc_buff);
+   // sprintf(loc_buff,"ms=%d sec=%d\n\r",loc_time_ms,loc_time_sec);
+ //   uart_Printf(&huart1,loc_buff);
     loc_prev_time_ms = loc_time_ms;
   }
   else

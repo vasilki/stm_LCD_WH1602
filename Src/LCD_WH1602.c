@@ -6,7 +6,10 @@
  */
 #include "LCD_WH1602.h"
 //#include "stm32f4xx_hal_rcc.h"
+#include "uart.h"
+#include <string.h>
 
+extern UART_HandleTypeDef huart1; /*declared in main.c*/
 //---Переопределяем порты для подключения дисплея, для удобства---//
 /*
 #define     LCM_OUT               GPIOB->ODR
@@ -31,12 +34,12 @@ static uint32_t     LCM_PIN_D4;           // GPIO_Pin_4          // PB4
 #define LCM_OUT (*gl_line)
 
 //---Функция задержки---//
-
+/*
 void delay(int a)
 {
     int i = 0;
     int f = 0;
-    a=a*10;
+  //  a=a*10;
     while(f < a)
     {
         while(i<60)
@@ -44,8 +47,8 @@ void delay(int a)
         f++;
     }
 }
+*/
 
-/*
 void delay(uint32_t par_us)
 {
   extern uint32_t HAL_RCC_GetSysClockFreq();
@@ -58,7 +61,7 @@ void delay(uint32_t par_us)
 
   return;
 }
-*/
+
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
 void PulseLCD()
 {
@@ -143,6 +146,8 @@ void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
     LCM_PIN_D7 = par_parameters.D7;
 
     LCM_OUT &= ~(LCM_PIN_MASK);
+    uart_PrintfInteger(&huart1,LCM_OUT,"hex");
+    uart_PrintfInteger(&huart1,LCM_OUT,"bin");
     delay(32000);
     delay(32000);
     delay(32000);
