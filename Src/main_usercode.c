@@ -31,7 +31,7 @@ void main_usercode(void)
 
   if(loc_time == 1)
   {
-
+    uart_Init(&huart1);
     button_SetActiveButtons('C',13);
     button_SetActiveButtons('B',6);
     tim_StartTimer(&htim9);

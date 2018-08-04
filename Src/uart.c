@@ -10,6 +10,13 @@
 
 #define K_MAX_STRING 200
 
+void uart_Init(UART_HandleTypeDef *par_uart)
+{
+  HAL_UART_Transmit(par_uart, (uint8_t*)"\n\r", strnlen("\n\r",K_MAX_STRING),0xFFFF);
+
+  return;
+}
+
 void uart_Printf(UART_HandleTypeDef *par_uart,const uint8_t *par_string)
 {
   /*HAL_StatusTypeDef loc_status;*/

@@ -137,6 +137,8 @@ void ClearLCDScreen()
 //---Инициализация дисплея---//
 void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
 {
+    delay(32000);
+
     gl_line = &par_parameters.pLine->ODR;
     LCM_PIN_RS = par_parameters.RS;
     LCM_PIN_EN = par_parameters.EN;
