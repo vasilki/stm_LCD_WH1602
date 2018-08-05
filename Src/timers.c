@@ -6,6 +6,7 @@
  */
 
 #include "stm32f4xx_hal.h"
+#include "dwt_stm32_delay.h"
 
 static unsigned int gl_time = 0;
 static unsigned int gl_time_ms = 0;
@@ -79,4 +80,19 @@ unsigned int tim_GetTimeFromStartMS(void)
 unsigned int tim_GetTimeFromStartSEC(void)
 {
   return gl_time_sec;
+}
+
+
+void tim_Delay_us(uint32_t par_us) 
+{
+  DWT_Delay_us(par_us);
+  
+  return;
+}
+
+void tim_DelayInit()
+{
+ DWT_Delay_Init(); 
+   
+ return; 
 }

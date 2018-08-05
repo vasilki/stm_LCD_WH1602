@@ -17,7 +17,7 @@ void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
   unsigned char loc_B_button_state = 0;
-  uint8_t loc_buff[200];
+ // uint8_t loc_buff[200];
   unsigned int loc_time;
   unsigned int loc_time_ms;
   unsigned int loc_time_sec;
@@ -29,27 +29,6 @@ void main_usercode(void)
   loc_time_ms = tim_GetTimeFromStartMS();
   loc_time_sec = tim_GetTimeFromStartSEC();
 
-  if(loc_time == 1)
-  {
-    uart_Init(&huart1);
-    button_SetActiveButtons('C',13);
-    button_SetActiveButtons('B',6);
-    tim_StartTimer(&htim9);
-    tim_StartTimer(&htim10);
-    loc_LCD_GPIO_Parameters.D7 = GPIO_PIN_9; // PB9
-    loc_LCD_GPIO_Parameters.D6 = GPIO_PIN_8; // PB8
-    loc_LCD_GPIO_Parameters.D5 = GPIO_PIN_7; // PB7
-    loc_LCD_GPIO_Parameters.D4 = GPIO_PIN_6; // PB6
-    loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
-    loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
-    loc_LCD_GPIO_Parameters.pLine = GPIOB;
-    InitializeLCD(loc_LCD_GPIO_Parameters);
-    ClearLCDScreen();
-  }
-  else
-  {
-    /*nothing to do*/
-  }
 
   if(loc_B_LCD_Print == 0 && loc_time_ms > 490 && loc_time_ms < 520)
   {
@@ -104,3 +83,28 @@ void main_usercode(void)
   return;
 }
 
+
+
+void main_Init(void)
+{
+
+  uart_Init(&huart1);
+  button_SetActiveButtons('C',13);
+  button_SetActiveButtons('B',6);
+  tim_DelayInit();
+  tim_StartTimer(&htim9);
+  tim_StartTimer(&htim10);
+  loc_LCD_GPIO_Parameters.D7 = GPIO_PIN_9; // PB9
+  loc_LCD_GPIO_Parameters.D6 = GPIO_PIN_8; // PB8
+  loc_LCD_GPIO_Parameters.D5 = GPIO_PIN_7; // PB7
+  loc_LCD_GPIO_Parameters.D4 = GPIO_PIN_6; // PB6
+  loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
+  loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
+  loc_LCD_GPIO_Parameters.pLine = GPIOB;
+  InitializeLCD(loc_LCD_GPIO_Parameters);
+  //ClearLCDScreen();
+  Cursor(0,0);
+  PrintStr("TEST");
+
+  return;
+}

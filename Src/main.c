@@ -41,7 +41,6 @@
 
 /* USER CODE BEGIN Includes */
 #include "main_usercode.h"
-#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -108,7 +107,7 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
-
+  main_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

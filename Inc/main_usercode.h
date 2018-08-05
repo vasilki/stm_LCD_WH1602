@@ -9,6 +9,8 @@
 #define MAIN_USERCODE_
 
 void main_usercode(void);
+void main_Init(void);
+
 
 #endif /* MAIN_USERCODE_ */
 

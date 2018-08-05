@@ -8,6 +8,7 @@
 //#include "stm32f4xx_hal_rcc.h"
 #include "uart.h"
 #include <string.h>
+#include "timers.h"
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
 //---Переопределяем порты для подключения дисплея, для удобства---//
@@ -48,7 +49,7 @@ void delay(int a)
     }
 }
 */
-
+/*
 void delay(uint32_t par_us)
 {
   extern uint32_t HAL_RCC_GetSysClockFreq();
@@ -62,30 +63,90 @@ void delay(uint32_t par_us)
   return;
 }
 
+*/
+
+
+void delay(uint32_t par_us)
+{
+  tim_Delay_us(par_us);
+  return;
+}
+
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
 void PulseLCD()
 {
     LCM_OUT &= ~LCM_PIN_EN;
-    delay(120);
+    delay(2);
     LCM_OUT |= LCM_PIN_EN;
-    delay(120);
+    delay(2);
     LCM_OUT &= (~LCM_PIN_EN);
-    delay(120);
+    delay(2);
 }
 
+
+void SetTetradePins(char par_ByteToSend, unsigned int *par_MSTetradePins, unsigned int *par_LSTetradePins)
+{
+  *par_MSTetradePins = 0;
+  *par_LSTetradePins = 0;
+
+  if(((par_ByteToSend >> 7) & 0x1) == 1)
+  {
+    *par_MSTetradePins = LCM_PIN_D7;
+  }
+  if(((par_ByteToSend >> 6) & 0x1) == 1)
+  {
+    *par_MSTetradePins |= LCM_PIN_D6;
+  }
+  if(((par_ByteToSend >> 5) & 0x1) == 1)
+  {
+    *par_MSTetradePins |= LCM_PIN_D5;
+  }
+  if(((par_ByteToSend >> 4) & 0x1) == 1)
+  {
+    *par_MSTetradePins |= LCM_PIN_D4;
+  }
+
+  if(((par_ByteToSend >> 3) & 0x1) == 1)
+  {
+    *par_LSTetradePins = LCM_PIN_D7;
+  }
+  if(((par_ByteToSend >> 2) & 0x1) == 1)
+  {
+    *par_LSTetradePins = LCM_PIN_D6;
+  }
+  if(((par_ByteToSend >> 1) & 0x1) == 1)
+  {
+    *par_LSTetradePins |= LCM_PIN_D5;
+  }
+  if((par_ByteToSend & 0x1) == 1)
+  {
+    *par_LSTetradePins |= LCM_PIN_D4;
+  }
+
+
+  return;
+}
 //---Отсылка байта в дисплей---//
 void SendByte(char ByteToSend, int IsData)
 {
-    LCM_OUT &= (~LCM_PIN_MASK);
-    LCM_OUT |= (ByteToSend & 0xF0);
+  unsigned int loc_MSTetradePins = 0;
+  unsigned int loc_LSTetradePins = 0;
 
+    LCM_OUT &= (~LCM_PIN_MASK);
+    //LCM_OUT |= (ByteToSend & 0xF0);
+
+    SetTetradePins(ByteToSend,&loc_MSTetradePins,&loc_LSTetradePins);
+    LCM_OUT |= loc_MSTetradePins;
     if (IsData == 1)
         LCM_OUT |= LCM_PIN_RS;
     else
         LCM_OUT &= ~LCM_PIN_RS;
     PulseLCD();
+
+
     LCM_OUT &= (~LCM_PIN_MASK);
-    LCM_OUT |= ((ByteToSend & 0x0F) << 4);
+    //LCM_OUT |= ((ByteToSend & 0x0F) << 4);
+    LCM_OUT |= loc_LSTetradePins;
 
     if (IsData == 1)
         LCM_OUT |= LCM_PIN_RS;
@@ -105,24 +166,25 @@ void Cursor(char Row, char Col)
    address = 0x40;
    address |= Col;
    SendByte(0x80 | address, 0);
+   delay(50);
 }
 
 void CursorOFF()
 {
-  SendByte(0b00001100, 0); //Курсор выключен
+  SendByte(0xC, 0); //Курсор выключен
   return;
 }
 
 void SetCursorFreeze()
 {
-  SendByte(0b00001110, 0); //Курсор не мигает
+  SendByte(0xE, 0); //Курсор не мигает
   return;
 }
 
 
 void SetCursorBlink()
 {
-  SendByte(0b00001111, 0); //Курсор мигает
+  SendByte(0xF, 0); //Курсор мигает
   return;
 }
 
@@ -131,14 +193,14 @@ void SetCursorBlink()
 void ClearLCDScreen()
 {
     SendByte(0x01, 0);
+    delay(32000);
     SendByte(0x02, 0);
+    delay(32000);
 }
 
 //---Инициализация дисплея---//
 void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
 {
-    delay(32000);
-
     gl_line = &par_parameters.pLine->ODR;
     LCM_PIN_RS = par_parameters.RS;
     LCM_PIN_EN = par_parameters.EN;
@@ -148,18 +210,39 @@ void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
     LCM_PIN_D7 = par_parameters.D7;
 
     LCM_OUT &= ~(LCM_PIN_MASK);
-    uart_PrintfInteger(&huart1,LCM_OUT,"hex");
-    uart_PrintfInteger(&huart1,LCM_OUT,"bin");
-    delay(32000);
-    delay(32000);
-    delay(32000);
     LCM_OUT &= ~LCM_PIN_RS;
     LCM_OUT &= ~LCM_PIN_EN;
+    delay(32000);
+    delay(32000);
+    delay(32000);
+
+    SendByte(0x20,0);
+    delay(100);
+    SendByte(0x20,0);
+    delay(100);
+    SendByte(0xC0,0);
+    delay(100);
+    SendByte(0,0);
+    delay(100);
+    SendByte(0xF0,0);
+    delay(100);
+    delay(100);
+    SendByte(0,0);
+    delay(100);
+    SendByte(0x10,0);
+    delay(10000);
+
+    SendByte(0,0);
+    delay(100);
+    SendByte(0x60,0);
+    delay(100);
+
+    /*
     LCM_OUT = 0x20;
     PulseLCD();
     SendByte(0x28, 0);
     SendByte(0x0E, 0);
-    SendByte(0x06, 0);
+    SendByte(0x06, 0);*/
 }
 
 //---Печать строки---//
@@ -170,6 +253,7 @@ void PrintStr(char *par_string)
     while ((c != 0) && (*c != 0))
     {
         SendByte(*c, 1);
+        delay(50);
         c++;
     }
 }
