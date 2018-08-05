@@ -3,44 +3,42 @@
  *
  *  Created on: 30 июля 2018 г.
  *      Author: vasilek
+ *      Based on article https://goo.gl/dDGv4P with a lot of modifications for STM32 F401RE and HAL
  */
+
 #include "LCD_WH1602.h"
-//#include "stm32f4xx_hal_rcc.h"
-#include "uart.h"
 #include <string.h>
 #include "timers.h"
+#include "uart.h"
 
-extern UART_HandleTypeDef huart1; /*declared in main.c*/
-//---Переопределяем порты для подключения дисплея, для удобства---//
-/*
-#define     LCM_OUT               GPIOB->ODR
-#define     LCM_PIN_RS            GPIO_Pin_0          // PB0
-#define     LCM_PIN_EN            GPIO_Pin_1          // PB1
-#define     LCM_PIN_D7            GPIO_Pin_7          // PB7
-#define     LCM_PIN_D6            GPIO_Pin_6          // PB6
-#define     LCM_PIN_D5            GPIO_Pin_5          // PB5
-#define     LCM_PIN_D4            GPIO_Pin_4          // PB4
-#define     LCM_PIN_MASK  ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
-*/
-static uint32_t *gl_line = 0;
-static uint32_t     LCM_PIN_RS;           // GPIO_Pin_0          // PB0
-static uint32_t     LCM_PIN_EN;           // GPIO_Pin_1          // PB1
-static uint32_t     LCM_PIN_D7;           // GPIO_Pin_7          // PB7
-static uint32_t     LCM_PIN_D6;           // GPIO_Pin_6          // PB6
-static uint32_t     LCM_PIN_D5;           // GPIO_Pin_5          // PB5
-static uint32_t     LCM_PIN_D4;           // GPIO_Pin_4          // PB4
-#define      LCM_PIN_MASK  ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
-#define MT_WH1602_DELAY_uS            (10000000)
+/*Static variables defining pins*/
 
-#define LCM_OUT (*gl_line)
+static uint32_t GL_PIN_RS;           // GPIO_Pin_0          // PB0
+static uint32_t GL_PIN_EN;           // GPIO_Pin_1          // PB1
+static uint32_t GL_PIN_D7;           // GPIO_Pin_7          // PB7
+static uint32_t GL_PIN_D6;           // GPIO_Pin_6          // PB6
+static uint32_t GL_PIN_D5;           // GPIO_Pin_5          // PB5
+static uint32_t GL_PIN_D4;           // GPIO_Pin_4          // PB4
 
-//---Функция задержки---//
+#define      GL_PIN_MASK  ((GL_PIN_RS | GL_PIN_EN | GL_PIN_D7 | GL_PIN_D6 | GL_PIN_D5 | GL_PIN_D4))
+#define K_DELAY_FOR_STM32_F401RE            (10000000)
+
+#define K_DELAY_MORE_THAN_39uS 50
+#define K_DELAY_MORE_THAN_1530uS 2000
+#define K_DELAY_MORE_THAN_100uS 150
+#define K_DELAY_MORE_THAN_4100uS 4500
+#define K_DELAY_MORE_THAN_30ms 31000
+
+static GPIO_TypeDef *GL_LINE;
+
+
+/*Delay function wich you should find out the coefficients of a*/
 /*
 void delay(int a)
 {
     int i = 0;
     int f = 0;
-  //  a=a*10;
+    a=a*20;
     while(f < a)
     {
         while(i<60)
@@ -49,212 +47,334 @@ void delay(int a)
     }
 }
 */
+
+/*Delay using SysClockFreq (It was taken from LIB MT_WH1602)*/
 /*
 void delay(uint32_t par_us)
 {
   extern uint32_t HAL_RCC_GetSysClockFreq();
 
-  uint32_t i = HAL_RCC_GetSysClockFreq();
-
-  i = (i/MT_WH1602_DELAY_uS)*par_us;
-
-  for (; i != 0; i--);
+  uint32_t loc_i = HAL_RCC_GetSysClockFreq();
+  loc_i= (loc_i/K_DELAY_FOR_STM32_F401RE)*par_us;
+  for (; loc_i != 0; loc_i--);
 
   return;
 }
-
 */
 
+
+/*delay in microseconds using DWT timer*/
 
 void delay(uint32_t par_us)
 {
   tim_Delay_us(par_us);
+  
   return;
 }
 
-//---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
-void PulseLCD()
+/*Set RS pin*/
+static void lcd_SetRS()
 {
-    LCM_OUT &= ~LCM_PIN_EN;
-    delay(2);
-    LCM_OUT |= LCM_PIN_EN;
-    delay(2);
-    LCM_OUT &= (~LCM_PIN_EN);
-    delay(2);
-}
-
-
-void SetTetradePins(char par_ByteToSend, unsigned int *par_MSTetradePins, unsigned int *par_LSTetradePins)
-{
-  *par_MSTetradePins = 0;
-  *par_LSTetradePins = 0;
-
-  if(((par_ByteToSend >> 7) & 0x1) == 1)
-  {
-    *par_MSTetradePins = LCM_PIN_D7;
-  }
-  if(((par_ByteToSend >> 6) & 0x1) == 1)
-  {
-    *par_MSTetradePins |= LCM_PIN_D6;
-  }
-  if(((par_ByteToSend >> 5) & 0x1) == 1)
-  {
-    *par_MSTetradePins |= LCM_PIN_D5;
-  }
-  if(((par_ByteToSend >> 4) & 0x1) == 1)
-  {
-    *par_MSTetradePins |= LCM_PIN_D4;
-  }
-
-  if(((par_ByteToSend >> 3) & 0x1) == 1)
-  {
-    *par_LSTetradePins = LCM_PIN_D7;
-  }
-  if(((par_ByteToSend >> 2) & 0x1) == 1)
-  {
-    *par_LSTetradePins = LCM_PIN_D6;
-  }
-  if(((par_ByteToSend >> 1) & 0x1) == 1)
-  {
-    *par_LSTetradePins |= LCM_PIN_D5;
-  }
-  if((par_ByteToSend & 0x1) == 1)
-  {
-    *par_LSTetradePins |= LCM_PIN_D4;
-  }
-
-
-  return;
-}
-//---Отсылка байта в дисплей---//
-void SendByte(char ByteToSend, int IsData)
-{
-  unsigned int loc_MSTetradePins = 0;
-  unsigned int loc_LSTetradePins = 0;
-
-    LCM_OUT &= (~LCM_PIN_MASK);
-    //LCM_OUT |= (ByteToSend & 0xF0);
-
-    SetTetradePins(ByteToSend,&loc_MSTetradePins,&loc_LSTetradePins);
-    LCM_OUT |= loc_MSTetradePins;
-    if (IsData == 1)
-        LCM_OUT |= LCM_PIN_RS;
-    else
-        LCM_OUT &= ~LCM_PIN_RS;
-    PulseLCD();
-
-
-    LCM_OUT &= (~LCM_PIN_MASK);
-    //LCM_OUT |= ((ByteToSend & 0x0F) << 4);
-    LCM_OUT |= loc_LSTetradePins;
-
-    if (IsData == 1)
-        LCM_OUT |= LCM_PIN_RS;
-    else
-        LCM_OUT &= ~LCM_PIN_RS;
-
-    PulseLCD();
-}
-
-//---Установка позиции курсора---//
-void Cursor(char Row, char Col)
-{
-   char address;
-   if (Row == 0)
-   address = 0;
-   else
-   address = 0x40;
-   address |= Col;
-   SendByte(0x80 | address, 0);
-   delay(50);
-}
-
-void CursorOFF()
-{
-  SendByte(0xC, 0); //Курсор выключен
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_RS,GPIO_PIN_SET);
+  
   return;
 }
 
-void SetCursorFreeze()
+/*Reset RS pin*/
+static void lcd_ResetRS()
 {
-  SendByte(0xE, 0); //Курсор не мигает
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_RS,GPIO_PIN_RESET);
+  
+  return;
+}
+
+/*Set EN pin*/
+static void lcd_SetEN()
+{
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_EN,GPIO_PIN_SET);
+  return;
+}
+
+/*Reset EN pin*/
+static void lcd_ResetEN()
+{
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_EN,GPIO_PIN_RESET);
+  return;
+}
+
+/*Reset all used pins*/
+static void lcd_ResetPins()
+{
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_EN,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_RS,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_D7,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_D6,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_D5,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GL_LINE,GL_PIN_D4,GPIO_PIN_RESET);
+  
+  return;
+}
+
+/*Set most significant 4 bits for 4-bit bus communication*/
+static void lcd_SetMostSignificant4Bits(char par_4bits)
+{
+  
+  if(((par_4bits >> 7) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D7,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D7,GPIO_PIN_RESET);
+  }
+  
+  if(((par_4bits >> 6) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D6,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D6,GPIO_PIN_RESET);
+  }
+
+  if(((par_4bits >> 5) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D5,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D5,GPIO_PIN_RESET);
+  }
+  
+  if(((par_4bits >> 4) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D4,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D4,GPIO_PIN_RESET);
+  }
+  
   return;
 }
 
 
-void SetCursorBlink()
+/*Set less significant 4 bits for 4-bit bus communication*/
+static void lcd_SetLessSignificant4Bits(char par_4bits)
 {
-  SendByte(0xF, 0); //Курсор мигает
+  
+  if(((par_4bits >> 3) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D7,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D7,GPIO_PIN_RESET);
+  }
+  
+  if(((par_4bits >> 2) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D6,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D6,GPIO_PIN_RESET);
+  }
+
+  if(((par_4bits >> 1) & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D5,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D5,GPIO_PIN_RESET);
+  }
+  
+  if((par_4bits & 0x1) == 1)
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D4,GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GL_LINE,GL_PIN_D4,GPIO_PIN_RESET);
+  }
+  
   return;
 }
 
 
-//---Очистка дисплея---//
-void ClearLCDScreen()
+/*Strobbing of EN pin*/
+static void lcd_PulseLCD()
 {
-    SendByte(0x01, 0);
-    delay(32000);
-    SendByte(0x02, 0);
-    delay(32000);
+  lcd_ResetEN();
+  delay(2);
+  lcd_SetEN();
+  delay(2);
+  lcd_ResetEN();
+  delay(2);
+  
+  return;
 }
 
-//---Инициализация дисплея---//
-void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
+/*Send a byte to LCD*/
+static void lcd_SendByte(char par_ByteToSend, char par_B_IsData)
 {
-    gl_line = &par_parameters.pLine->ODR;
-    LCM_PIN_RS = par_parameters.RS;
-    LCM_PIN_EN = par_parameters.EN;
-    LCM_PIN_D4 = par_parameters.D4;
-    LCM_PIN_D5 = par_parameters.D5;
-    LCM_PIN_D6 = par_parameters.D6;
-    LCM_PIN_D7 = par_parameters.D7;
+  /*Set most significant 4 bits for 4-bit bus communication*/
+  
+  lcd_ResetPins();
+  lcd_SetMostSignificant4Bits(par_ByteToSend);
+  if (par_B_IsData == 1)
+  {
+    lcd_SetRS();
+  }
+  else
+  {
+    lcd_ResetRS();
+  }
 
-    LCM_OUT &= ~(LCM_PIN_MASK);
-    LCM_OUT &= ~LCM_PIN_RS;
-    LCM_OUT &= ~LCM_PIN_EN;
-    delay(32000);
-    delay(32000);
-    delay(32000);
+  lcd_PulseLCD();
 
-    SendByte(0x20,0);
-    delay(100);
-    SendByte(0x20,0);
-    delay(100);
-    SendByte(0xC0,0);
-    delay(100);
-    SendByte(0,0);
-    delay(100);
-    SendByte(0xF0,0);
-    delay(100);
-    delay(100);
-    SendByte(0,0);
-    delay(100);
-    SendByte(0x10,0);
-    delay(10000);
+  /*Set less significant 4 bits for 4-bit bus communication*/
+  lcd_ResetPins();
+  lcd_SetLessSignificant4Bits(par_ByteToSend);
+  if (par_B_IsData == 1)
+  {
+    lcd_SetRS();
+  }
+  else
+  {
+    lcd_ResetRS();
 
-    SendByte(0,0);
-    delay(100);
-    SendByte(0x60,0);
-    delay(100);
-
-    /*
-    LCM_OUT = 0x20;
-    PulseLCD();
-    SendByte(0x28, 0);
-    SendByte(0x0E, 0);
-    SendByte(0x06, 0);*/
+  }
+  
+  lcd_PulseLCD();
+  
+  return;
 }
 
-//---Печать строки---//
-void PrintStr(char *par_string)
+/*Set cursor position (0,0) - is first ROW, first column*/
+void lcd_SetCursor(char par_Row, char par_Col)
 {
-    char *c;
-    c = par_string;
-    while ((c != 0) && (*c != 0))
-    {
-        SendByte(*c, 1);
-        delay(50);
-        c++;
-    }
+  char loc_address;
+  
+  if (par_Row == 0)
+  {
+    loc_address = 0;
+  }
+  else
+  {
+    loc_address = 0x40;
+  }
+  loc_address |= par_Col;
+  loc_address |= (char)0x80;
+  lcd_SendByte(loc_address, 0);
+  delay(K_DELAY_MORE_THAN_39uS);
+
+  return;
+}
+
+/*Cursor off*/
+void lcd_CursorOFF()
+{
+  lcd_SendByte(0xC, 0);
+  delay(K_DELAY_MORE_THAN_39uS);
+  
+  return;
+}
+
+/*Set freezing cursor*/
+void lcd_SetCursorFreeze()
+{
+  lcd_SendByte(0xE, 0); 
+  delay(K_DELAY_MORE_THAN_39uS);
+  
+  return;
+}
+
+/*Set blinking cursor*/
+void lcd_SetCursorBlink()
+{
+  lcd_SendByte(0xF, 0); 
+  delay(K_DELAY_MORE_THAN_39uS);
+  
+  return;
+}
+
+
+/*Clear LCD Screen*/
+void lcd_ClearLCDScreen()
+{
+  lcd_SendByte(0x01, 0);
+  delay(K_DELAY_MORE_THAN_1530uS);
+  lcd_SendByte(0x02, 0);
+  delay(K_DELAY_MORE_THAN_1530uS);
+
+  return;
+}
+
+
+/*LCD initialization*/
+void lcd_Init(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
+{
+  GL_LINE = par_parameters.pLine;
+  GL_PIN_RS = par_parameters.RS;
+  GL_PIN_EN = par_parameters.EN;
+  GL_PIN_D4 = par_parameters.D4;
+  GL_PIN_D5 = par_parameters.D5;
+  GL_PIN_D6 = par_parameters.D6;
+  GL_PIN_D7 = par_parameters.D7;
+
+  lcd_ResetPins();
+  /*Init delay more than 30 ms)*/
+  delay(K_DELAY_MORE_THAN_30ms);
+
+  /*Function set*/
+  lcd_SendByte(0x20,0);
+  /*delay more than 4.1ms*/
+  delay(K_DELAY_MORE_THAN_4100uS);
+  /*Set 4pins-bus, two rows, font2 (5x7)*/
+  lcd_SendByte(0x28,0);
+  delay(K_DELAY_MORE_THAN_100uS);
+  lcd_SendByte(0xC0,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+
+  
+  /*Display ON/OFF control*/
+  lcd_SendByte(0,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+  lcd_SendByte(0xF0,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+
+  /*Display clear*/
+  lcd_SendByte(0,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+  lcd_SendByte(0x10,0);
+  /*delay more than 1.53ms*/
+  delay(K_DELAY_MORE_THAN_1530uS);
+
+  /*Entry mode set*/
+  lcd_SendByte(0,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+  lcd_SendByte(0x60,0);
+  delay(K_DELAY_MORE_THAN_39uS);
+  
+  return;
+}
+
+/*print string*/
+void lcd_PrintStr(char *par_string)
+{
+  char *c;
+  
+  c = par_string;
+  
+  while ((c != 0) && (*c != 0))
+  {
+    lcd_SendByte(*c, 1);
+    delay(K_DELAY_MORE_THAN_39uS);
+    c++;
+  }
+  
+  return;
 }
 

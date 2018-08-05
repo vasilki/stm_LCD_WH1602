@@ -8,7 +8,6 @@
 #ifndef LCD_WH1602_H_
 #define LCD_WH1602_H_
 
-//#include "stm32f4xx_hal_gpio.h"
 #include "stm32f401xe.h"
 
 typedef struct
@@ -22,15 +21,15 @@ typedef struct
   uint32_t D7;
 }T_LCD_GPIO_Parameters;
 
-void PrintStr(char *par_string);
-void ClearLCDScreen();
-void Cursor(char Row, char Col);
-void InitializeLCD(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/);
+void lcd_PrintStr(char *par_string);
+void lcd_ClearLCDScreen();
+void lcd_SetCursor(char Row, char Col);
+void lcd_Init(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/);
 
-void CursorOFF();
+void lcd_CursorOFF();
 
-void SetCursorFreeze();
+void lcd_SetCursorFreeze();
 
-void SetCursorBlink();
+void lcd_SetCursorBlink();
 
 #endif /* LCD_WH1602_H_ */

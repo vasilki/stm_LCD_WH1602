@@ -30,28 +30,15 @@ void main_usercode(void)
   loc_time_sec = tim_GetTimeFromStartSEC();
 
 
-  if(loc_B_LCD_Print == 0 && loc_time_ms > 490 && loc_time_ms < 520)
-  {
-  //  char loc_buff[200];
-    Cursor(0,2);
-    //SetCursorFreeze();
-    PrintStr("TEST");
- //   uart_Printf(&huart1,loc_buff);
-    loc_B_LCD_Print = 1;
-  }
-  else
-  {
-    /*nothing to do*/
-  }
-
-
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
   HAL_Delay(300);*/
-  if(loc_prev_time_ms != loc_time_ms)
+  if(loc_time_sec > 3 && loc_prev_time_ms == 0)
   {
-   // sprintf(loc_buff,"ms=%d sec=%d\n\r",loc_time_ms,loc_time_sec);
- //   uart_Printf(&huart1,loc_buff);
-    loc_prev_time_ms = loc_time_ms;
+    lcd_ClearLCDScreen();
+
+    lcd_SetCursor(1,0);
+    lcd_PrintStr("PRINCESS!");
+    loc_prev_time_ms = 1;
   }
   else
   {
@@ -101,10 +88,10 @@ void main_Init(void)
   loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
   loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
   loc_LCD_GPIO_Parameters.pLine = GPIOB;
-  InitializeLCD(loc_LCD_GPIO_Parameters);
-  //ClearLCDScreen();
-  Cursor(0,0);
-  PrintStr("TEST");
+  lcd_Init(loc_LCD_GPIO_Parameters);
+  lcd_ClearLCDScreen();
+  lcd_SetCursor(0,0);
+  lcd_PrintStr("IRISHKA");
 
   return;
 }
