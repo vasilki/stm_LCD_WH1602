@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>stm_LCD_WH1602</name>
-	<comment />
+	<comment></comment>
 	<projects>
 	</projects>
 	<buildSpec>
@@ -25,6 +25,10 @@
 		<nature>fr.ac6.mcu.ide.core.MCUProjectNature</nature>
 	</natures>
 	<linkedResources>
-		
+		<link>
+			<name>mylibs</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>

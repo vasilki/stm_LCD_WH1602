@@ -34,11 +34,12 @@ void main_usercode(void)
   HAL_Delay(300);*/
   if(loc_time_sec > 3 && loc_prev_time_ms == 0)
   {
-    lcd_ClearLCDScreen();
+    /*lcd_ClearLCDScreen();*/
 
     lcd_SetCursor(1,0);
     lcd_PrintStr("PRINCESS!");
     loc_prev_time_ms = 1;
+    uart_Printf(&huart1,"TEST\n\r");
   }
   else
   {
