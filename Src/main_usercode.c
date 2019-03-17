@@ -5,13 +5,15 @@
 #include "button_handle.h"
 #include "timers.h"
 #include "uart.h"
-#include "LCD_WH1602.h"
+#include "lcd_1602.h"
 
 extern UART_HandleTypeDef huart1; /*declared in main.c*/
 extern ADC_HandleTypeDef hadc1; /*declared in main.c*/
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 static T_LCD_GPIO_Parameters loc_LCD_GPIO_Parameters;
+
+static void main_Init(void);
 
 void main_usercode(void)
 {
@@ -23,6 +25,8 @@ void main_usercode(void)
   unsigned int loc_time_sec;
   static unsigned int loc_prev_time_ms=0;
   static unsigned char loc_B_LCD_Print = 0;
+
+  main_Init();
 
   tim_UpdatePeriod();
   loc_time = tim_GetPeriod();
@@ -39,7 +43,6 @@ void main_usercode(void)
     lcd_SetCursor(1,0);
     lcd_PrintStr("PRINCESS!");
     loc_prev_time_ms = 1;
-    uart_Printf(&huart1,"TEST\n\r");
   }
   else
   {
@@ -75,24 +78,42 @@ void main_usercode(void)
 
 void main_Init(void)
 {
+  static uint8_t loc_B_IsFirstTime = 0;
 
-  uart_Init(&huart1);
-  button_SetActiveButtons('C',13);
-  button_SetActiveButtons('B',6);
-  tim_DelayInit();
-  tim_StartTimer(&htim9);
-  tim_StartTimer(&htim10);
-  loc_LCD_GPIO_Parameters.D7 = GPIO_PIN_9; // PB9
-  loc_LCD_GPIO_Parameters.D6 = GPIO_PIN_8; // PB8
-  loc_LCD_GPIO_Parameters.D5 = GPIO_PIN_7; // PB7
-  loc_LCD_GPIO_Parameters.D4 = GPIO_PIN_6; // PB6
-  loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
-  loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
-  loc_LCD_GPIO_Parameters.pLine = GPIOB;
-  lcd_Init(loc_LCD_GPIO_Parameters);
-  lcd_ClearLCDScreen();
-  lcd_SetCursor(0,0);
-  lcd_PrintStr("IRISHKA");
+  if(loc_B_IsFirstTime == 0)
+  {
+    /*BUTTON init*/
+    button_SetActiveButtons('C',13);
+    button_SetActiveButtons('B',6);
+
+    /*TIM init*/
+    tim_StartTimer(&htim9);
+    tim_StartTimer(&htim10);
+
+    /*UART init*/
+    uart_Init(&huart1);
+    uart_PrintfBuildVersion(&huart1);
+
+    /*LCD1602 init*/
+    loc_LCD_GPIO_Parameters.D7 = GPIO_PIN_9; // PB9
+    loc_LCD_GPIO_Parameters.D6 = GPIO_PIN_8; // PB8
+    loc_LCD_GPIO_Parameters.D5 = GPIO_PIN_7; // PB7
+    loc_LCD_GPIO_Parameters.D4 = GPIO_PIN_6; // PB6
+    loc_LCD_GPIO_Parameters.EN = GPIO_PIN_5; // PB5
+    loc_LCD_GPIO_Parameters.RS = GPIO_PIN_4; // PB4
+    loc_LCD_GPIO_Parameters.pLine = GPIOB;
+    lcd_Init(loc_LCD_GPIO_Parameters);
+    lcd_ClearLCDScreen();
+    lcd_SetCursor(0,0);
+    lcd_PrintStr("IRISHKA");
+
+    loc_B_IsFirstTime = 1;
+  }
+  else
+  {
+    /*nothing to do*/
+  }
+
 
   return;
 }

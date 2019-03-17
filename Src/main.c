@@ -70,7 +70,7 @@ static void MX_TIM9_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+uint8_t GL_PROJECT_NAME[]="PROJECT OF INTERACTION WITH LCD1602 #1\r\n";
 /* USER CODE END 0 */
 
 /**
@@ -107,7 +107,7 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
-  main_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
