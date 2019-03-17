@@ -328,36 +328,37 @@ void lcd_Init(T_LCD_GPIO_Parameters par_parameters /*GPIOx*/)
   /*Init delay more than 30 ms)*/
   delay(K_DELAY_MORE_THAN_30ms);
 
-  /*Function set*/
-  lcd_SendByte(0x20,0);
+  /*Function set 1*/    
+  lcd_SendByte(0x30,0);
   /*delay more than 4.1ms*/
-  delay(K_DELAY_MORE_THAN_4100uS);
+  delay(K_DELAY_MORE_THAN_4100uS);    
+  
+  /*Function set 2*/    
+  lcd_SendByte(0x30,0);
+  delay(K_DELAY_MORE_THAN_100uS);    
+  /*Function set 3*/ 
+  lcd_SendByte(0x30,0);    
+  delay(K_DELAY_MORE_THAN_39uS);    
+  lcd_SendByte(0x20,0);    
+  delay(K_DELAY_MORE_THAN_39uS);    
+  lcd_SendByte(0x20,0); 
+  delay(K_DELAY_MORE_THAN_39uS);    
+ 
   /*Set 4pins-bus, two rows, font2 (5x7)*/
   lcd_SendByte(0x28,0);
-  delay(K_DELAY_MORE_THAN_100uS);
-  lcd_SendByte(0xC0,0);
-  delay(K_DELAY_MORE_THAN_39uS);
-
-  
+  delay(K_DELAY_MORE_THAN_39uS);   
   /*Display ON/OFF control*/
-  lcd_SendByte(0,0);
-  delay(K_DELAY_MORE_THAN_39uS);
-  lcd_SendByte(0xF0,0);
-  delay(K_DELAY_MORE_THAN_39uS);
-
+  lcd_SendByte(0xF,0);
+  delay(K_DELAY_MORE_THAN_39uS);  
   /*Display clear*/
-  lcd_SendByte(0,0);
-  delay(K_DELAY_MORE_THAN_39uS);
-  lcd_SendByte(0x10,0);
+  lcd_SendByte(0x1,0);
   /*delay more than 1.53ms*/
-  delay(K_DELAY_MORE_THAN_1530uS);
-
+  delay(K_DELAY_MORE_THAN_1530uS);      
   /*Entry mode set*/
-  lcd_SendByte(0,0);
-  delay(K_DELAY_MORE_THAN_39uS);
   lcd_SendByte(0x60,0);
   delay(K_DELAY_MORE_THAN_39uS);
-  
+    
+
   return;
 }
 
