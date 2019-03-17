@@ -19,11 +19,12 @@ void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
   unsigned char loc_B_button_state = 0;
- // uint8_t loc_buff[200];
+  uint8_t loc_buff[20];
   unsigned int loc_time;
   unsigned int loc_time_ms;
   unsigned int loc_time_sec;
   static unsigned int loc_prev_time_ms=0;
+  static unsigned int loc_prev_time_sec=0;
   static unsigned char loc_B_LCD_Print = 0;
 
   main_Init();
@@ -36,18 +37,21 @@ void main_usercode(void)
 
   /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
   HAL_Delay(300);*/
-  if(loc_time_sec > 3 && loc_prev_time_ms == 0)
+  if(loc_time_sec != loc_prev_time_sec)
   {
-    lcd_ClearLCDScreen();
-
+    sprintf(loc_buff,"%04d",loc_time_sec);
+    //lcd_ClearLCDScreen();
+    lcd_Return();
     lcd_SetCursor(1,0);
-    lcd_PrintStr("PRINCESS!");
-    loc_prev_time_ms = 1;
+    lcd_PrintStr((char*)loc_buff);
   }
   else
   {
     /*nothing to do*/
   }
+
+
+
 
   if((loc_time_sec % 2) == 0)
   {
@@ -70,6 +74,7 @@ void main_usercode(void)
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
+  loc_prev_time_sec = loc_time_sec;
 
   return;
 }
