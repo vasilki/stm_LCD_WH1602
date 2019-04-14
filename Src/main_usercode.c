@@ -14,7 +14,8 @@ extern TIM_HandleTypeDef htim10;
 static T_LCD_GPIO_Parameters loc_LCD_GPIO_Parameters;
 
 static void main_Init(void);
-
+static void main_heartbeat(void);
+  
 void main_usercode(void)
 {
   unsigned int loc_adc_val=0;
@@ -33,10 +34,10 @@ void main_usercode(void)
   loc_time = tim_GetPeriod();
   loc_time_ms = tim_GetTimeFromStartMS();
   loc_time_sec = tim_GetTimeFromStartSEC();
+  
+  /*HeartBeat*/
+  main_heartbeat();
 
-
-  /*HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
-  HAL_Delay(300);*/
   if(loc_time_sec != loc_prev_time_sec)
   {
     sprintf(loc_buff,"%04d",loc_time_sec);
@@ -48,18 +49,6 @@ void main_usercode(void)
   else
   {
     /*nothing to do*/
-  }
-
-
-
-
-  if((loc_time_sec % 2) == 0)
-  {
-    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
-  }
-  else
-  {
-    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
   }
 
   //loc_adc_val = adc_GetValue(&hadc1);
@@ -120,5 +109,34 @@ void main_Init(void)
   }
 
 
+  return;
+}
+
+
+void main_heartbeat(void)
+{
+  uint32_t loc_time_sec;
+  static uint32_t loc_prev_time_sec = 0;
+  
+  loc_time_sec = tim_GetTimeFromStartSEC();
+  
+  if(loc_prev_time_sec != loc_time_sec)
+  {
+    if((loc_time_sec % 2) == 0)
+    {
+      HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
+    }
+    else
+    {
+      HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
+    }
+    loc_prev_time_sec = loc_time_sec;
+  }
+  else
+  {
+    /*nothing to do*/
+  }
+  
+  
   return;
 }
